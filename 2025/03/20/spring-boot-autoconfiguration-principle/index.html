@@ -1,0 +1,280 @@
+<!DOCTYPE html><html lang="zh-C" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Spring Boot 自动配置原理探秘 | ChiefNing's blog</title><meta name="author" content="ChiefNing"><meta name="copyright" content="ChiefNing"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="如果你用过 Spring Boot，一定会被它的「开箱即用」所震撼。只要引入一个 starter 依赖，写几行配置，一个 Web 应用、一个数据源、一个消息队列就能跑起来。 这种体验在 Spring 时代是不可想象的——那时的开发者需要手动配置视图解析器、事务管理器、数据源连接池……一堆 XML 或者 Java Config 文件堆得比业务代码还多。那么，Spring Boot 的自动配置究竟是怎">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring Boot 自动配置原理探秘">
+<meta property="og:url" content="https://www.chiefning.info/2025/03/20/spring-boot-autoconfiguration-principle/index.html">
+<meta property="og:site_name" content="ChiefNing&#39;s blog">
+<meta property="og:description" content="如果你用过 Spring Boot，一定会被它的「开箱即用」所震撼。只要引入一个 starter 依赖，写几行配置，一个 Web 应用、一个数据源、一个消息队列就能跑起来。 这种体验在 Spring 时代是不可想象的——那时的开发者需要手动配置视图解析器、事务管理器、数据源连接池……一堆 XML 或者 Java Config 文件堆得比业务代码还多。那么，Spring Boot 的自动配置究竟是怎">
+<meta property="og:locale">
+<meta property="og:image" content="https://oss-pai-lhy4p5u1dtczsijy6w-cn-shanghai.oss-cn-shanghai.aliyuncs.com/%E5%A4%B4%E5%83%8F">
+<meta property="article:published_time" content="2025-03-19T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-05-07T13:47:09.983Z">
+<meta property="article:author" content="ChiefNing">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Spring Boot">
+<meta property="article:tag" content="源码分析">
+<meta property="article:tag" content="自动配置">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://oss-pai-lhy4p5u1dtczsijy6w-cn-shanghai.oss-cn-shanghai.aliyuncs.com/%E5%A4%B4%E5%83%8F"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Spring Boot 自动配置原理探秘",
+  "url": "https://www.chiefning.info/2025/03/20/spring-boot-autoconfiguration-principle/",
+  "image": "https://oss-pai-lhy4p5u1dtczsijy6w-cn-shanghai.oss-cn-shanghai.aliyuncs.com/%E5%A4%B4%E5%83%8F",
+  "datePublished": "2025-03-19T16:00:00.000Z",
+  "dateModified": "2026-05-07T13:47:09.983Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "ChiefNing",
+      "url": "https://www.chiefning.info"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://www.chiefning.info/2025/03/20/spring-boot-autoconfiguration-principle/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Spring Boot 自动配置原理探秘',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/about.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://oss-pai-lhy4p5u1dtczsijy6w-cn-shanghai.oss-cn-shanghai.aliyuncs.com/%E5%A4%B4%E5%83%8F" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">20</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">38</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">2</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-graduation-cap"></i><span> 博文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></li><li><a class="site-page child" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></li><li><a class="site-page child" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/links/"><i class="fa-fw fa fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/comment/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于笔者</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">ChiefNing's blog</span></a><a class="nav-page-title" href="/"><span class="site-name">Spring Boot 自动配置原理探秘</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-graduation-cap"></i><span> 博文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></li><li><a class="site-page child" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></li><li><a class="site-page child" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/links/"><i class="fa-fw fa fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/comment/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于笔者</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">Spring Boot 自动配置原理探秘</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2025-03-19T16:00:00.000Z" title="Created 2025-03-20 00:00:00">2025-03-20</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2026-05-07T13:47:09.983Z" title="Updated 2026-05-07 21:47:09">2026-05-07</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">Word Count:</span><span class="word-count">1.5k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">Reading Time:</span><span>5mins</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><p>如果你用过 Spring Boot，一定会被它的「开箱即用」所震撼。只要引入一个 starter 依赖，写几行配置，一个 Web 应用、一个数据源、一个消息队列就能跑起来。</p>
+<p>这种体验在 Spring 时代是不可想象的——那时的开发者需要手动配置视图解析器、事务管理器、数据源连接池……一堆 XML 或者 Java Config 文件堆得比业务代码还多。那么，Spring Boot 的自动配置究竟是怎么做到的？这篇文章带你从源码层面一探究竟。</p>
+<span id="more"></span>
+
+<h2 id="从入口开始：-SpringBootApplication"><a href="#从入口开始：-SpringBootApplication" class="headerlink" title="从入口开始：@SpringBootApplication"></a>从入口开始：@SpringBootApplication</h2><p>每一个 Spring Boot 应用的入口都长这样：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Application</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        SpringApplication.run(Application.class, args);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>@SpringBootApplication</code> 是一个组合注解，它包含了三个关键注解：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SpringBootConfiguration</span>  <span class="comment">// 标记这是一个配置类</span></span><br><span class="line"><span class="meta">@EnableAutoConfiguration</span>  <span class="comment">// 核心：开启自动配置</span></span><br><span class="line"><span class="meta">@ComponentScan</span>            <span class="comment">// 自动扫描当前包及其子包的 Bean</span></span><br></pre></td></tr></table></figure>
+
+<p>其中发挥核心作用的是 <code>@EnableAutoConfiguration</code>。</p>
+<h2 id="EnableAutoConfiguration-的秘密"><a href="#EnableAutoConfiguration-的秘密" class="headerlink" title="@EnableAutoConfiguration 的秘密"></a>@EnableAutoConfiguration 的秘密</h2><p><code>@EnableAutoConfiguration</code> 的定义如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Target(ElementType.TYPE)</span></span><br><span class="line"><span class="meta">@Retention(RetentionPolicy.RUNTIME)</span></span><br><span class="line"><span class="meta">@Documented</span></span><br><span class="line"><span class="meta">@Inherited</span></span><br><span class="line"><span class="meta">@AutoConfigurationPackage</span></span><br><span class="line"><span class="meta">@Import(AutoConfigurationImportSelector.class)</span></span><br><span class="line"><span class="keyword">public</span> <span class="meta">@interface</span> EnableAutoConfiguration &#123;</span><br><span class="line">    <span class="type">String</span> <span class="variable">ENABLED_OVERRIDE_PROPERTY</span> <span class="operator">=</span> <span class="string">&quot;spring.boot.enableautoconfiguration&quot;</span>;</span><br><span class="line">    Class&lt;?&gt;[] exclude() <span class="keyword">default</span> &#123;&#125;;</span><br><span class="line">    String[] excludeName() <span class="keyword">default</span> &#123;&#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>关键代码是 <code>@Import(AutoConfigurationImportSelector.class)</code>。在 Spring 中，<code>@Import</code> 可以导入一个配置类或 <code>ImportSelector</code> 实现类。<code>AutoConfigurationImportSelector</code> 实现了 <code>ImportSelector</code> 接口，它的作用是<strong>批量导入需要自动配置的类</strong>。</p>
+<h2 id="核心流程：加载-spring-factories"><a href="#核心流程：加载-spring-factories" class="headerlink" title="核心流程：加载 spring.factories"></a>核心流程：加载 spring.factories</h2><p><code>AutoConfigurationImportSelector</code> 的核心逻辑在 <code>selectImports()</code> 方法中，总结起来就是三步：</p>
+<ol>
+<li>从 <code>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</code> 文件中读取所有自动配置类的全限定名</li>
+<li>通过 <code>@Conditional</code> 条件注解过滤掉不满足条件的配置类</li>
+<li>将剩余的配置类注入到 Spring 容器中</li>
+</ol>
+<p>以 Spring Boot 3.x 为例，这个文件中包含了大约 140 多个自动配置类，比如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration</span><br><span class="line">org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration</span><br><span class="line">org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration</span><br><span class="line">org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>但注意，这 140 多个配置类并不会全部生效。它们绝大部分都会被 <code>@Conditional</code> 条件过滤掉，最终生效的可能只有十几个。这就是自动配置的「智能」之处。</p>
+<h2 id="条件装配的艺术：-Conditional"><a href="#条件装配的艺术：-Conditional" class="headerlink" title="条件装配的艺术：@Conditional"></a>条件装配的艺术：@Conditional</h2><p><code>@Conditional</code> 注解是 Spring Boot 自动配置的「开关」，它让配置变得有条件的而不是固定的。</p>
+<p>Spring Boot 提供了一组非常实用的派生注解：</p>
+<table>
+<thead>
+<tr>
+<th>注解</th>
+<th>作用</th>
+<th>示例场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>@ConditionalOnClass</code></td>
+<td>classpath 存在指定类时</td>
+<td>引入 <code>spring-data-redis</code> 时才配置 RedisTemplate</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnMissingClass</code></td>
+<td>classpath 不存在指定类时</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnBean</code></td>
+<td>容器中已有指定 Bean 时</td>
+<td>用户自定义了 DataSource 就不创建默认的</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnMissingBean</code></td>
+<td>容器中不存在指定 Bean 时</td>
+<td>用户没配置就创建默认的</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnProperty</code></td>
+<td>配置文件中存在指定属性时</td>
+<td>通过配置项开关某个功能</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnResource</code></td>
+<td>classpath 存在指定资源时</td>
+<td>存在 <code>logback.xml</code> 才配置日志</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnWebApplication</code></td>
+<td>当前是 Web 应用时</td>
+<td>Web 相关配置仅在 Web 环境下生效</td>
+</tr>
+<tr>
+<td><code>@ConditionalOnExpression</code></td>
+<td>SpEL 表达式为 true 时</td>
+<td>复杂的组合条件</td>
+</tr>
+</tbody></table>
+<h3 id="实战视角：看-DataSourceAutoConfiguration"><a href="#实战视角：看-DataSourceAutoConfiguration" class="headerlink" title="实战视角：看 DataSourceAutoConfiguration"></a>实战视角：看 DataSourceAutoConfiguration</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@AutoConfiguration</span></span><br><span class="line"><span class="meta">@ConditionalOnClass(&#123; DataSource.class, EmbeddedDatabaseType.class &#125;)</span></span><br><span class="line"><span class="meta">@ConditionalOnMissingBean(type = &quot;io.r2dbc.spi.ConnectionFactory&quot;)</span></span><br><span class="line"><span class="meta">@EnableConfigurationProperties(DataSourceProperties.class)</span></span><br><span class="line"><span class="meta">@Import(&#123; DataSourcePoolMetadataProvidersConfiguration.class,</span></span><br><span class="line"><span class="meta">        DataSourceInitializationConfiguration.class &#125;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DataSourceAutoConfiguration</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Configuration</span></span><br><span class="line">    <span class="meta">@Conditional(DataSourceAutoConfiguration.EmbeddedDataSourceCondition.class)</span></span><br><span class="line">    <span class="meta">@ConditionalOnMissingBean(&#123; DataSource.class, XADataSource.class &#125;)</span></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">EmbeddedDatabaseConfiguration</span> &#123;</span><br><span class="line">        <span class="meta">@Bean</span></span><br><span class="line">        <span class="meta">@ConditionalOnMissingBean</span></span><br><span class="line">        DataSource <span class="title function_">dataSource</span><span class="params">(DataSourceProperties properties)</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">EmbeddedDatabaseBuilder</span>()</span><br><span class="line">                .setType(EmbeddedDatabaseType.get(properties.getEmbeddedDatabaseType()))</span><br><span class="line">                .build();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个配置类的逻辑非常清晰：</p>
+<ol>
+<li>只有在 classpath 中存在 <code>DataSource.class</code> 时才加载这个配置</li>
+<li>如果用户已经自己定义了一个 <code>DataSource</code> Bean，就不创建默认的</li>
+<li>只有不存在 <code>io.r2dbc.spi.ConnectionFactory</code> 时才生效（R2DBC 和 JDBC 二选一）</li>
+<li>默认情况下创建一个嵌入式数据库（如 H2）的数据源</li>
+</ol>
+<p>这就是 Spring Boot「约定优于配置」理念的实现——你什么都不做，它给你一个合理的默认值；你做了任何自定义，你的配置优先。</p>
+<h2 id="自定义-Starter：理论印证实践"><a href="#自定义-Starter：理论印证实践" class="headerlink" title="自定义 Starter：理论印证实践"></a>自定义 Starter：理论印证实践</h2><p>理解了自动配置的原理，写一个自定义 Starter 就水到渠成了。</p>
+<p>一个标准的 Spring Boot Starter 包含两部分：</p>
+<ol>
+<li><strong>autoconfigure 模块</strong>：自动配置类</li>
+<li><strong>starter 模块</strong>：负责引入 autoconfigure 依赖和其他必要依赖</li>
+</ol>
+<h3 id="步骤-1：编写配置属性类"><a href="#步骤-1：编写配置属性类" class="headerlink" title="步骤 1：编写配置属性类"></a>步骤 1：编写配置属性类</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@ConfigurationProperties(prefix = &quot;custom.hello&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HelloProperties</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">String</span> <span class="variable">prefix</span> <span class="operator">=</span> <span class="string">&quot;Hello&quot;</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">String</span> <span class="variable">suffix</span> <span class="operator">=</span> <span class="string">&quot;!&quot;</span>;</span><br><span class="line">    <span class="comment">// getters &amp; setters</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="步骤-2：编写自动配置类"><a href="#步骤-2：编写自动配置类" class="headerlink" title="步骤 2：编写自动配置类"></a>步骤 2：编写自动配置类</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@AutoConfiguration</span></span><br><span class="line"><span class="meta">@ConditionalOnClass(HelloService.class)</span></span><br><span class="line"><span class="meta">@EnableConfigurationProperties(HelloProperties.class)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HelloAutoConfiguration</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="meta">@ConditionalOnMissingBean</span></span><br><span class="line">    <span class="keyword">public</span> HelloService <span class="title function_">helloService</span><span class="params">(HelloProperties properties)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">HelloService</span>(properties.getPrefix(), properties.getSuffix());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="步骤-3：注册自动配置"><a href="#步骤-3：注册自动配置" class="headerlink" title="步骤 3：注册自动配置"></a>步骤 3：注册自动配置</h3><p>在 <code>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</code> 中写入：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">com.example.custom.starter.HelloAutoConfiguration</span><br></pre></td></tr></table></figure>
+
+<h3 id="步骤-4：使用"><a href="#步骤-4：使用" class="headerlink" title="步骤 4：使用"></a>步骤 4：使用</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">custom.hello.prefix=你好</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Autowired</span></span><br><span class="line"><span class="keyword">private</span> HelloService helloService;</span><br><span class="line"></span><br><span class="line">helloService.say(<span class="string">&quot;World&quot;</span>); <span class="comment">// 输出 &quot;你好 World!&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>大功告成。你现在已经自己实现了一个 Spring Boot Starter。</p>
+<h2 id="Spring-Boot-3-x-的变化"><a href="#Spring-Boot-3-x-的变化" class="headerlink" title="Spring Boot 3.x 的变化"></a>Spring Boot 3.x 的变化</h2><p>Spring Boot 3.x 基于 Spring Framework 6 和 Java 17，有以下重大变化：</p>
+<ol>
+<li><strong>移除 <code>spring.factories</code></strong>：自动配置现在从 <code>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</code> 文件中读取，不再使用 <code>spring.factories</code></li>
+<li><strong>Jakarta EE 迁移</strong>：<code>javax.*</code> 全部变更为 <code>jakarta.*</code></li>
+<li><strong>AOT 编译支持</strong>：提前编译（Ahead-of-Time）优化，提升启动速度和减少内存占用</li>
+<li><strong>GraalVM Native Image 支持</strong>：支持将 Spring Boot 应用编译为原生可执行文件</li>
+</ol>
+<p>其中 GraalVM 的支持最有想象空间——Spring Boot 应用的启动时间从几秒缩短到几十毫秒，这对于微服务和 Serverless 场景是非常关键的改进。</p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>Spring Boot 的自动配置并没有使用什么黑魔法，它的核心原理可以总结为一句话：<strong>通过 <code>@Conditional</code> 条件注解，在运行时根据 classpath 内容、容器状态和配置属性来决定是否创建某个 Bean</strong>。</p>
+<p>理解了这一点，Spring Boot 在你眼中就不再是一个黑盒了。当你遇到自动配置没有按预期生效时，可以打开 <code>spring-boot-autoconfigure</code> 的源码看一眼条件注解，通常很快就能找到原因——这也是为什么我一直推荐开发者去读源码。</p>
+<p>毕竟，最好的调试工具不是断点，而是理解。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://www.chiefning.info">ChiefNing</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://www.chiefning.info/2025/03/20/spring-boot-autoconfiguration-principle/">https://www.chiefning.info/2025/03/20/spring-boot-autoconfiguration-principle/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Java/">Java</a><a class="post-meta__tags" href="/tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">源码分析</a><a class="post-meta__tags" href="/tags/Spring-Boot/">Spring Boot</a><a class="post-meta__tags" href="/tags/%E8%87%AA%E5%8A%A8%E9%85%8D%E7%BD%AE/">自动配置</a></div><div class="post-share"><div class="social-share" data-image="https://oss-pai-lhy4p5u1dtczsijy6w-cn-shanghai.oss-cn-shanghai.aliyuncs.com/%E5%A4%B4%E5%83%8F" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/04/08/java-collections-framework-design-philosophy/" title="Java 集合框架设计哲学：从 ArrayList 到 ConcurrentHashMap"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">Previous</div><div class="info-item-2">Java 集合框架设计哲学：从 ArrayList 到 ConcurrentHashMap</div></div><div class="info-2"><div class="info-item-1">Java 集合框架（Java Collections Framework，JCF）是 JDK 中使用频率最高、设计最为精巧的子系统之一。每一个 Java 开发者每天都在和 ArrayList、HashMap、HashSet 打交道，但真正深入理解它们设计哲学的人并不多。 这篇文章不从 API 手册的角度罗列方法，而是从设计者的视角来解读：为什么 ArrayList 的默认容量是 10？为什么 HashMap 在 JDK 8 中要引入红黑树？为什么 ConcurrentHashMap 能如此高效？   集合框架的总体架构Java 集合框架的核心接口层次结构如下： 12345678910111213141516171819                   ┌──────┐                   │Iterable│                   └───┬───┘                       │               ┌───────┴────────┐               │                │          ...</div></div></div></a><a class="pagination-related" href="/2025/03/05/java-8-lambda-stream-functional/" title="Java 8 函数式编程：Lambda 与 Stream 的优雅之道"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">Java 8 函数式编程：Lambda 与 Stream 的优雅之道</div></div><div class="info-2"><div class="info-item-1">2014 年 Java 8 发布时，整个 Java 社区都松了一口气——在经历了近六年的沉寂之后，Java 终于迎来了一次脱胎换骨的升级。而 Lambda 表达式与 Stream API 是这次升级中最耀眼的双子星，它们让 Java 开发者第一次体会到了函数式编程的优雅。 从事后诸葛亮的角度看，Java 8 的意义远不止新增了几个语法糖。它是 Java 从「纯面向对象语言」向「多范式语言」转型的里程碑。   函数式编程的核心理念在聊 Lambda 之前，有必要先搞清楚两个核心概念。 不变性（Immutability）函数式编程推崇数据不可变。一个数据一旦创建就不再改变，每次操作都返回一个新的数据副本。这听起来浪费，但在并发环境下，不可变数据天然就是线程安全的。 123456789// 命令式——修改原有数据List&lt;String&gt; names = new ArrayList&lt;&gt;();names.add(&quot;Alice&quot;);names.add(&quot;Bob&quot;);// 函数式——创建新数据List&lt;String&gt; ...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/04/08/java-collections-framework-design-philosophy/" title="Java 集合框架设计哲学：从 ArrayList 到 ConcurrentHashMap"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-04-08</div><div class="info-item-2">Java 集合框架设计哲学：从 ArrayList 到 ConcurrentHashMap</div></div><div class="info-2"><div class="info-item-1">Java 集合框架（Java Collections Framework，JCF）是 JDK 中使用频率最高、设计最为精巧的子系统之一。每一个 Java 开发者每天都在和 ArrayList、HashMap、HashSet 打交道，但真正深入理解它们设计哲学的人并不多。 这篇文章不从 API 手册的角度罗列方法，而是从设计者的视角来解读：为什么 ArrayList 的默认容量是 10？为什么 HashMap 在 JDK 8 中要引入红黑树？为什么 ConcurrentHashMap 能如此高效？   集合框架的总体架构Java 集合框架的核心接口层次结构如下： 12345678910111213141516171819                   ┌──────┐                   │Iterable│                   └───┬───┘                       │               ┌───────┴────────┐               │                │          ...</div></div></div></a><a class="pagination-related" href="/2025/11/20/java-future-loom-valhalla-panama/" title="Java 的未来：Project Loom、Valhalla 与 Panama"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-11-20</div><div class="info-item-2">Java 的未来：Project Loom、Valhalla 与 Panama</div></div><div class="info-2"><div class="info-item-1">Java 已经快三十岁了。在编程语言的江湖中，这绝对算得上高龄。但回看过去五年 Java 的变化——从 Java 17 到 Java 21 再到如今的 Java 24——你很难找到另一个老牌语言拥有如此旺盛的生命力。 这份生命力的背后，是三个雄心勃勃的项目：Project Loom（并发）、Project Valhalla（值类型）和 Project Panama（互操作）。它们分别在重构 Java 的并发模型、类型系统和与外部代码交互的方式。理解这三个项目，就是理解 Java 下一个十年的发展方向。   Project Loom：重新定义并发Loom 这个单词的意思是「织布机」——将多根线（Threads）编织在一起。这个名字取得很妙。 它解决了什么问题？Java 的并发模型在很长一段时间里是割裂的：  如果你的代码是同步阻塞的（传统的 Thread + IO），编程简单但并发能力受限于线程数 如果你的代码是异步非阻塞的（CompletableFuture + NIO），并发能力强但代码复杂、调试困难  开发者被迫在「简单但低效」和「复杂但高效」之间做选择。Loom 的出现打破...</div></div></div></a><a class="pagination-related" href="/2025/06/10/design-patterns-in-java/" title="设计模式在 Java 中的经典应用"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-10</div><div class="info-item-2">设计模式在 Java 中的经典应用</div></div><div class="info-2"><div class="info-item-1">设计模式是什么？用一句话说：设计模式是在特定场景下解决特定问题的可复用方案。 很多人学设计模式时最大的困惑是：学了一堆 UML 图，背了一堆定义，一到写代码就全忘了。这是正常的——设计模式不是靠背的，而是靠「踩坑」理解的。你没有写过可维护性很差的代码，就无法理解为什么需要工厂模式；没有遇到过度耦合的模块，就无法理解依赖注入的价值。 这篇文章不谈纯理论，而是结合 Java 生态中的实际案例来讲解几种最常用的设计模式。   创建型模式单例模式：最熟悉也最容易被坑的模式单例模式保证一个类只有一个实例。Java 中常见的饿汉式、懒汉式、双重检查锁等写法几乎是面试必考。 但双检锁（Double-Checked Locking）在 JDK 5 之前由于 JMM 的指令重排序问题，是存在隐患的： 1234567891011121314151617// 线程安全的懒汉式单例public class Singleton &#123;    private static volatile Singleton instance;  // volatile 禁止指令重排序        private ...</div></div></div></a><a class="pagination-related" href="/2025/01/28/deep-dive-jvm-memory-and-gc/" title="深入理解 JVM 内存模型与垃圾回收机制"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-01-28</div><div class="info-item-2">深入理解 JVM 内存模型与垃圾回收机制</div></div><div class="info-2"><div class="info-item-1">如果 Java 是一门功夫，那么 JVM 就是内功心法。不懂 JVM，写了再多代码也只是停留在「拳脚功夫」的层面。而 JVM 中最核心、最常被面试官问起、也最影响系统性能的部分，就是内存模型与垃圾回收机制。 这篇文章不打算抄写《Java 虚拟机规范》的条文，而是希望通过一个清晰的脉络，帮你建立起对 JVM 内存管理的整体认知。   JVM 运行时数据区域JVM 在运行时将内存划分为若干个不同的数据区域，各有各的职责和生命周期。 程序计数器（Program Counter Register）这是一块很小的内存空间，可以看作是当前线程所执行字节码的行号指示器。线程私有，生命周期与线程相同。如果线程执行的是 Java 方法，计数器记录的是正在执行的虚拟机字节码指令地址；如果是 Native 方法，则计数器值为空（Undefined）。 Java 虚拟机栈（Java Virtual Machine Stack）每个方法执行时都会创建一个栈帧（Stack Frame），用于存储局部变量表、操作数栈、动态链接、方法出口等信息。每个方法从调用到执行完成的过程，就对应着一个栈帧在虚拟机栈中入栈到...</div></div></div></a><a class="pagination-related" href="/2025/08/17/java-basics-2-control-flow/" title="Java基础语法（二）—— 运算符与流程控制"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-17</div><div class="info-item-2">Java基础语法（二）—— 运算符与流程控制</div></div><div class="info-2"><div class="info-item-1">一、运算符1.1 算术运算符12345678910111213141516int a = 10, b = 3;int sum = a + b;      // 13  加法int diff = a - b;     // 7   减法int prod = a * b;     // 30  乘法int quot = a / b;     // 3   除法（整数相除得整数，小数部分截断）int mod = a % b;       // 1   取余（取模）// 自增自减int x = 5;x++;   // 后置自增，x 变为 6（先用后加）++x;   // 前置自增，x 变为 7（先加后用）int y = 5;int m = y++;  // m = 5, y = 6（先用后加）int n = ++y;  // n = 7, y = 7（先加后用）  1.2 赋值运算符123456int a = 10;a += 5;   // a = a + 5 → 15a -= 3;   // a = a - 3 → 12a *= 2;   // a = a * 2 → 24a /= 4...</div></div></div></a><a class="pagination-related" href="/2025/03/05/java-8-lambda-stream-functional/" title="Java 8 函数式编程：Lambda 与 Stream 的优雅之道"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-03-05</div><div class="info-item-2">Java 8 函数式编程：Lambda 与 Stream 的优雅之道</div></div><div class="info-2"><div class="info-item-1">2014 年 Java 8 发布时，整个 Java 社区都松了一口气——在经历了近六年的沉寂之后，Java 终于迎来了一次脱胎换骨的升级。而 Lambda 表达式与 Stream API 是这次升级中最耀眼的双子星，它们让 Java 开发者第一次体会到了函数式编程的优雅。 从事后诸葛亮的角度看，Java 8 的意义远不止新增了几个语法糖。它是 Java 从「纯面向对象语言」向「多范式语言」转型的里程碑。   函数式编程的核心理念在聊 Lambda 之前，有必要先搞清楚两个核心概念。 不变性（Immutability）函数式编程推崇数据不可变。一个数据一旦创建就不再改变，每次操作都返回一个新的数据副本。这听起来浪费，但在并发环境下，不可变数据天然就是线程安全的。 123456789// 命令式——修改原有数据List&lt;String&gt; names = new ArrayList&lt;&gt;();names.add(&quot;Alice&quot;);names.add(&quot;Bob&quot;);// 函数式——创建新数据List&lt;String&gt; ...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://oss-pai-lhy4p5u1dtczsijy6w-cn-shanghai.oss-cn-shanghai.aliyuncs.com/%E5%A4%B4%E5%83%8F" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">ChiefNing</div><div class="author-info-description">revivo my blog in 2026/1/6</div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">20</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">38</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://githubfast.com/lyr233" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="https://blog.csdn.net/YR_112233" target="_blank" title="CSDN"><i class="fa fa-book-open"></i></a><a class="social-icon" href="tencent://AddContact/?fromId=45&amp;fromSubId=1&amp;subcmd=all&amp;uin=728831102&amp;website=www.oicqzone.com" target="_blank" title="QQ"><i class="fab fa-qq"></i></a><a class="social-icon" href="mailto:728831102@qq.com" target="_blank" title="Email"><i class="fas fa-envelope-open-text"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%8E%E5%85%A5%E5%8F%A3%E5%BC%80%E5%A7%8B%EF%BC%9A-SpringBootApplication"><span class="toc-number">1.</span> <span class="toc-text">从入口开始：@SpringBootApplication</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#EnableAutoConfiguration-%E7%9A%84%E7%A7%98%E5%AF%86"><span class="toc-number">2.</span> <span class="toc-text">@EnableAutoConfiguration 的秘密</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B8%E5%BF%83%E6%B5%81%E7%A8%8B%EF%BC%9A%E5%8A%A0%E8%BD%BD-spring-factories"><span class="toc-number">3.</span> <span class="toc-text">核心流程：加载 spring.factories</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9D%A1%E4%BB%B6%E8%A3%85%E9%85%8D%E7%9A%84%E8%89%BA%E6%9C%AF%EF%BC%9A-Conditional"><span class="toc-number">4.</span> <span class="toc-text">条件装配的艺术：@Conditional</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E6%88%98%E8%A7%86%E8%A7%92%EF%BC%9A%E7%9C%8B-DataSourceAutoConfiguration"><span class="toc-number">4.1.</span> <span class="toc-text">实战视角：看 DataSourceAutoConfiguration</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%87%AA%E5%AE%9A%E4%B9%89-Starter%EF%BC%9A%E7%90%86%E8%AE%BA%E5%8D%B0%E8%AF%81%E5%AE%9E%E8%B7%B5"><span class="toc-number">5.</span> <span class="toc-text">自定义 Starter：理论印证实践</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%A5%E9%AA%A4-1%EF%BC%9A%E7%BC%96%E5%86%99%E9%85%8D%E7%BD%AE%E5%B1%9E%E6%80%A7%E7%B1%BB"><span class="toc-number">5.1.</span> <span class="toc-text">步骤 1：编写配置属性类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%A5%E9%AA%A4-2%EF%BC%9A%E7%BC%96%E5%86%99%E8%87%AA%E5%8A%A8%E9%85%8D%E7%BD%AE%E7%B1%BB"><span class="toc-number">5.2.</span> <span class="toc-text">步骤 2：编写自动配置类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%A5%E9%AA%A4-3%EF%BC%9A%E6%B3%A8%E5%86%8C%E8%87%AA%E5%8A%A8%E9%85%8D%E7%BD%AE"><span class="toc-number">5.3.</span> <span class="toc-text">步骤 3：注册自动配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%A5%E9%AA%A4-4%EF%BC%9A%E4%BD%BF%E7%94%A8"><span class="toc-number">5.4.</span> <span class="toc-text">步骤 4：使用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Spring-Boot-3-x-%E7%9A%84%E5%8F%98%E5%8C%96"><span class="toc-number">6.</span> <span class="toc-text">Spring Boot 3.x 的变化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AF%AD"><span class="toc-number">7.</span> <span class="toc-text">结语</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/01/06/test/" title="test">test</a><time datetime="2026-01-06T15:41:25.000Z" title="Created 2026-01-06 23:41:25">2026-01-06</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/01/06/hello-world/" title="Untitled">Untitled</a><time datetime="2026-01-06T15:38:13.912Z" title="Created 2026-01-06 23:38:13">2026-01-06</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/11/20/java-future-loom-valhalla-panama/" title="Java 的未来：Project Loom、Valhalla 与 Panama">Java 的未来：Project Loom、Valhalla 与 Panama</a><time datetime="2025-11-19T16:00:00.000Z" title="Created 2025-11-20 00:00:00">2025-11-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/09/27/python-basics-3-functions-oop/" title="Python基础语法（三）—— 函数与面向对象">Python基础语法（三）—— 函数与面向对象</a><time datetime="2025-09-27T02:00:00.000Z" title="Created 2025-09-27 10:00:00">2025-09-27</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/09/18/java-performance-optimization-practical-guide/" title="Java 性能优化实战经验总结">Java 性能优化实战经验总结</a><time datetime="2025-09-17T16:00:00.000Z" title="Created 2025-09-18 00:00:00">2025-09-18</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By ChiefNing</span><span class="framework-info"><span>Framework </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.1</a><span class="footer-separator">|</span><span>Theme </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
