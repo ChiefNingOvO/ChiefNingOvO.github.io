@@ -1,0 +1,91 @@
+/* ===== Custom Styles for ChiefNing's Blog ===== */
+
+/* 首页文章卡片悬停效果 */
+.recent-post-info:hover {
+  transform: translateY(-3px);
+  transition: all 0.3s ease;
+}
+
+/* 分类标签云美化 */
+.tag-cloud a {
+  transition: all 0.3s ease;
+}
+.tag-cloud a:hover {
+  transform: scale(1.1);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: #fff !important;
+}
+
+/* 代码块圆角 */
+figure.highlight {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* 文章内图片样式 */
+#article-container img {
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+}
+
+/* 页脚美化 */
+#footer-wrap {
+  padding: 2rem 0;
+}
+#footer-wrap a {
+  transition: color 0.3s ease;
+}
+
+/* 回到顶部按钮动画 */
+#rightside > div > button {
+  transition: all 0.3s ease;
+}
+
+/* 友链页面 - 快速交换信息框 */
+.links-intro {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-left: 4px solid #49b1f5;
+  padding: 1.5rem 2rem;
+  margin: 1rem 0 2rem;
+  border-radius: 12px;
+}
+
+/* 电子名片效果 */
+.business-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 16px;
+  margin: 1rem 0;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+}
+
+/* 文章目录滚动条美化 */
+#toc::-webkit-scrollbar {
+  width: 4px;
+}
+#toc::-webkit-scrollbar-thumb {
+  background: #49b1f5;
+  border-radius: 2px;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 768px) {
+  .links-intro, .business-card {
+    padding: 1rem;
+  }
+}
+
+/* 分类页卡片 */
+.category-lists .category-list-count {
+  background: #49b1f5;
+  color: #fff;
+  border-radius: 10px;
+  padding: 0 8px;
+  font-size: 0.8rem;
+}
+
+/* 公告栏样式 */
+.card-announcement .card-announcement-content {
+  line-height: 1.8;
+}
