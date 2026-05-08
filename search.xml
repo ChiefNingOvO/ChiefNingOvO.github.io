@@ -299,9 +299,9 @@
             
             <tag> MCP </tag>
             
-            <tag> 开发实战 </tag>
-            
             <tag> 工具集成 </tag>
+            
+            <tag> 开发实战 </tag>
             
         </tags>
       
@@ -332,9 +332,9 @@
             
             <tag> LangGraph </tag>
             
-            <tag> 状态管理 </tag>
-            
             <tag> 多Agent协作 </tag>
+            
+            <tag> 状态管理 </tag>
             
         </tags>
       
@@ -425,9 +425,9 @@
             
             <tag> Agent </tag>
             
-            <tag> Function Calling </tag>
-            
             <tag> Tool Calling </tag>
+            
+            <tag> Function Calling </tag>
             
             <tag> 机制分析 </tag>
             
@@ -584,9 +584,9 @@
             
             <tag> Agent </tag>
             
-            <tag> Tool </tag>
-            
             <tag> Function Calling </tag>
+            
+            <tag> Tool </tag>
             
             <tag> 工具调用 </tag>
             
@@ -648,11 +648,11 @@
             
             <tag> MCP </tag>
             
-            <tag> 工具集成 </tag>
-            
             <tag> 协议 </tag>
             
             <tag> Anthropic </tag>
+            
+            <tag> 工具集成 </tag>
             
         </tags>
       
