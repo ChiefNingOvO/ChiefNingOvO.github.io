@@ -427,9 +427,9 @@
             
             <tag> LangGraph </tag>
             
-            <tag> 多Agent协作 </tag>
-            
             <tag> 状态管理 </tag>
+            
+            <tag> 多Agent协作 </tag>
             
         </tags>
       
@@ -520,9 +520,9 @@
             
             <tag> Agent </tag>
             
-            <tag> Function Calling </tag>
-            
             <tag> Tool Calling </tag>
+            
+            <tag> Function Calling </tag>
             
             <tag> 机制分析 </tag>
             
@@ -615,9 +615,9 @@
             
             <tag> Agent </tag>
             
-            <tag> LangChain </tag>
-            
             <tag> LangGraph </tag>
+            
+            <tag> LangChain </tag>
             
             <tag> 状态管理 </tag>
             
@@ -679,9 +679,9 @@
             
             <tag> Agent </tag>
             
-            <tag> Tool </tag>
-            
             <tag> Function Calling </tag>
+            
+            <tag> Tool </tag>
             
             <tag> 工具调用 </tag>
             
@@ -774,9 +774,9 @@
             
             <tag> AI </tag>
             
-            <tag> LLM </tag>
-            
             <tag> LangChain </tag>
+            
+            <tag> LLM </tag>
             
             <tag> 应用开发 </tag>
             
