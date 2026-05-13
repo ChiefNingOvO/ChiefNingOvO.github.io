@@ -394,9 +394,9 @@
             
             <tag> MCP </tag>
             
-            <tag> 工具集成 </tag>
-            
             <tag> 开发实战 </tag>
+            
+            <tag> 工具集成 </tag>
             
         </tags>
       
@@ -615,11 +615,11 @@
             
             <tag> Agent </tag>
             
-            <tag> LangChain </tag>
-            
             <tag> LangGraph </tag>
             
             <tag> 状态管理 </tag>
+            
+            <tag> LangChain </tag>
             
         </tags>
       
@@ -743,11 +743,11 @@
             
             <tag> MCP </tag>
             
+            <tag> 工具集成 </tag>
+            
             <tag> 协议 </tag>
             
             <tag> Anthropic </tag>
-            
-            <tag> 工具集成 </tag>
             
         </tags>
       
@@ -886,9 +886,9 @@
       
         <tags>
             
-            <tag> 基础语法 </tag>
-            
             <tag> 面向对象 </tag>
+            
+            <tag> 基础语法 </tag>
             
             <tag> Python </tag>
             
@@ -1006,9 +1006,9 @@
             
             <tag> Java </tag>
             
-            <tag> 基础语法 </tag>
-            
             <tag> 面向对象 </tag>
+            
+            <tag> 基础语法 </tag>
             
         </tags>
       
