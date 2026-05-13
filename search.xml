@@ -295,11 +295,11 @@
             
             <tag> AI </tag>
             
+            <tag> Agent </tag>
+            
             <tag> Skill </tag>
             
             <tag> 系统设计 </tag>
-            
-            <tag> Agent </tag>
             
             <tag> 可组合性 </tag>
             
@@ -520,9 +520,9 @@
             
             <tag> Agent </tag>
             
-            <tag> Function Calling </tag>
-            
             <tag> Tool Calling </tag>
+            
+            <tag> Function Calling </tag>
             
             <tag> 机制分析 </tag>
             
@@ -679,9 +679,9 @@
             
             <tag> Agent </tag>
             
-            <tag> Tool </tag>
-            
             <tag> Function Calling </tag>
+            
+            <tag> Tool </tag>
             
             <tag> 工具调用 </tag>
             
