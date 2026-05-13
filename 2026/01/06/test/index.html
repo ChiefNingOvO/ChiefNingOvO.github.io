@@ -219,7 +219,7 @@
   window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
 })()</script><script>(() => {
   const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
-  const option = null
+  const option = {"data-mapping":"pathname","data-lang":"zh-CN","data-strict":0,"data-reactions-enabled":1,"data-input-position":"bottom"}
 
   const getGiscusTheme = theme => theme === 'dark' ? 'dark' : 'light'
 

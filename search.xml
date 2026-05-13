@@ -520,9 +520,9 @@
             
             <tag> Agent </tag>
             
-            <tag> Tool Calling </tag>
-            
             <tag> Function Calling </tag>
+            
+            <tag> Tool Calling </tag>
             
             <tag> 机制分析 </tag>
             
@@ -679,9 +679,9 @@
             
             <tag> Agent </tag>
             
-            <tag> Function Calling </tag>
-            
             <tag> Tool </tag>
+            
+            <tag> Function Calling </tag>
             
             <tag> 工具调用 </tag>
             
@@ -774,9 +774,9 @@
             
             <tag> AI </tag>
             
-            <tag> LangChain </tag>
-            
             <tag> LLM </tag>
+            
+            <tag> LangChain </tag>
             
             <tag> 应用开发 </tag>
             
@@ -886,9 +886,9 @@
       
         <tags>
             
-            <tag> 基础语法 </tag>
-            
             <tag> 面向对象 </tag>
+            
+            <tag> 基础语法 </tag>
             
             <tag> Python </tag>
             
@@ -1006,9 +1006,9 @@
             
             <tag> Java </tag>
             
-            <tag> 基础语法 </tag>
-            
             <tag> 面向对象 </tag>
+            
+            <tag> 基础语法 </tag>
             
         </tags>
       
@@ -1122,9 +1122,9 @@
             
             <tag> Java </tag>
             
-            <tag> 面向对象 </tag>
-            
             <tag> Spring </tag>
+            
+            <tag> 面向对象 </tag>
             
         </tags>
       
